@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>UI Mockup Builder</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script>
+var elements = [];
+
+$(document).ready(function() {
+$.getJSON('/elements', function(data) {
+elements = data;
+renderElements();
+});
+
+$('#preview-btn').click(function() {
+var data = [];
+$('.selected-element').each(function() {
+var id = $(this).attr('id');
+var type = $(this).attr('data-type');
+var attributes = {};
+$(this).find('input').each(function() {
+attributes[$(this).attr('name')] = $(this).val();
+});
+data.push({id: id, type: type, attributes: attributes});
+});
+
+$.ajax({
+url: '/preview',
+method: 'POST',
+contentType: 'application/json',
+data: JSON.stringify(data),
+success: function(data) {
+$('#preview-container').html(data);
+}
+});
+});
+
+$('#save-btn').click(function() {
+var data = [];
+$('.selected-element').each(function() {
+var id = $(this).attr('id');
+var type = $(this).attr('data-type');
+var attributes = {};
+$(this).find('input').each(function() {
+attributes[$(this).attr('name')] = $(this).val();
+});
+data.push({id: id, type: type, attributes: attributes});
+});
+
+$.ajax({
+url: '/save',
+method: 'POST',
+contentType: 'application/json',
+data: JSON.stringify(data),
+success: function(data) {
+alert('Mockup saved successfully. Your mockup ID is: ' + data.mockup_id);
+}
+});
+});
+
+$('#load-btn').click(function() {
+var mockup_id = prompt('Enter the mockup ID you want to load:');
+if (mockup_id) {
+$.ajax({
+url: '/load/' + mockup_id,
+method: 'GET',
+success: function(data) {
+if (data.error) {
+alert('Mockup not found');
+} else {
+loadMockup(data);
+}
+}
+});
+}
+});
+
+$('#delete-btn').click(function() {
+var mockup_id = prompt('Enter the mockup ID you want to delete:');
+if (mockup_id) {
+$.ajax({
+url: '/delete/' + mockup_id,
+method: 'DELETE',
+success: function(data) {
+if (data.success) {
+alert('Mockup deleted successfully');
+} else {
+alert('Mockup not found');
+}
+}
+});
+}
+});
+
+function renderElements() {
+for (var i = 0; i < elements.length; i++) {
+var element = elements[i];
+var html = '<div class="element-container" data-type="' + element.type + '" id="' + element.id + '">';
+html += '  <div class="element-preview">';
+if (element.type == 'button') {
+html += '    <button type="button">' + element.text + '</button>';
+} else if (element.type == 'text_field') {
+html += '    <input type="text" placeholder="' + element.placeholder + '">';
+} else if (element.type == 'image') {
+html += '    <img src="' + element.src + '">';
+}
+html += '  </div>';
+html += '  <div class="element-settings">';
+for (var key in element.attributes) {
+var value = element.attributes[key];
+html += '    <label for="' + key + '">' + key + '</label>';
+html += '    <input type="text" name="' + key + '" value="' + value + '">';
+}
+html += '  </div>';
+html += '</div>';
+$('#elements-container').append(html);
+}
+
+$('.element-container').draggable({
+helper: 'clone',
+appendTo: 'body'
+});
+
+$('#drop-zone').droppable({
+accept: '.element-container',
+drop: function(event, ui) {
+$(ui.draggable).addClass('selected-element');
+}
+});
+}
+
+function loadMockup(data) {
+$('#drop-zone').empty();
+for (var i = 0; i < data.length; i++) {
+var element = data[i];
+var html = '<div class="element-container selected-element" data-type="' + element.type + '" id="' + element.id + '">';
+html += '  <div class="element-preview">';
+if (element.type == 'button') {
+html += '    <button type="button">' + element.text + '</button>';
+} else if (element.type == 'text_field') {
+html += '    <input type="text" placeholder="' + element.placeholder + '" value="' + element.attributes.value + '">';
+} else if (element.type == 'image') {
+html += '    <img src="' + element.src + '">';
+}
+html += '  </div>';
+html += '  <div class="element-settings">';
+for (var key in element.attributes) {
+var value = element.attributes[key];
+html += '    <label for="' + key + '">' + key + '</label>';
+html += '    <input type="text" name="' + key + '" value="' + value + '">';
+}
+html += '  </div>';
+html += '</div>';
+$('#drop-zone').append(html);
+}
+
+renderElements();
+}
+});
+</script>
+</head>
+<body>
+<div id="elements-container"></div>
+<div id="drop-zone"></div>
+<div id="preview-container"></div>
+
+<div id="button-container">
+<button id="preview-btn" type="button">Preview</button>
+<button id="save-btn" type="button">Save</button>
+<button id="load-btn" type="button">Load</button>
+<button id="delete-btn" type="button">Delete</button>
+</div>
+</body>
+</html>
+
+
