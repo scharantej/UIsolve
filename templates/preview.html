@@ -1,0 +1,20 @@
+
+<div id="preview"></div>
+<script>
+var mockup = {{ mockup|tojson }};
+
+for (var i = 0; i < mockup.length; i++) {
+var element = mockup[i];
+var html = '<div class="element-preview">';
+if (element.type == 'button') {
+html += '  <button type="button">' + element.text + '</button>';
+} else if (element.type == 'text_field') {
+html += '  <input type="text" placeholder="' + element.placeholder + '" value="' + element.attributes.value + '">';
+} else if (element.type == 'image') {
+html += '  <img src="' + element.src + '">';
+}
+html += '</div>';
+$('#preview').append(html);
+}
+</script>
+
